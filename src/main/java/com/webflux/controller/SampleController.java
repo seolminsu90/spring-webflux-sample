@@ -104,6 +104,17 @@ public class SampleController {
             .ordered((u1, u2) -> u2.getAge() - u1.getAge()); // 각 Publisher가 병렬 수행되서 Ordered 해줘야 Flux로 변환됨
     }
 
+    // -------------------------------------------- 공통 Response객체 사용 시
+    @GetMapping("/example/{userId}")
+    public Mono<ResponseEntity<Test>> get(@PathVariable Long userId) {
+        Mono<Test> testMono = Mono.just(new Test("test", 1));
+        return testMono.map((user) -> { // Mono<Test> -> Map 이용해서 변환
+            if (user.isAdult()) {
+                return ResponseEntity.ok().header("X-User-Adult", "true").build();
+            }
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        });
+    }
 
     // -------------------------------------------- Reactive 테스트용 ReactiveRedis 관련
 
