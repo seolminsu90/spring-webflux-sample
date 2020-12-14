@@ -65,6 +65,7 @@ public class SampleController {
         Mono<Test> value = request1.flatMap(msg -> {
             return GET_greeting(2);
         });
+        // * 1:1 .map,  1:n .flatMap (not concurrency) .concatMap or .flatMapSequential (concurrency)
 
         // 다수의 waterfall 예시
         GET_greeting(1)
