@@ -9,6 +9,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -56,22 +57,20 @@ public class SampleController {
     private Mono<Test> GET_greeting(int apiNo) {
         return webClient.get().uri("/test" + apiNo + "/{msg}", "   hihi").retrieve().bodyToMono(Test.class);
     }
-    
+
     // webClient Exception Handling
-    private void webClientExceptionExample(){
-        webClient.mutate()                  // Builder 재활용해서 설정만 다르게 해서 쓰는방식
-             .baseUrl("https://some.com")
-             .build()
-             .get()
-             .uri("/resource")
-             .accept(MediaType.APPLICATION_JSON)
-             .retrieve() // 데이터를 받는 방식 exchange()는 Memory leak으로 인해 사용을 권고하지 않음.
-             .onStatus(status -> status.is4xxClientError() 
-                              || status.is5xxServerError()
-                 , clientResponse ->
-                               clientResponse.bodyToMono(String.class)
-                               .map(body -> new RuntimeException(body)))
-             .bodyToMono(String.class); 
+    private void webClientExceptionExample() {
+        webClient.mutate() // Builder 재활용해서 설정만 다르게 해서 쓰는방식
+                 .baseUrl("https://some.com")
+                 .build()
+                 .get()
+                 .uri("/resource")
+                 .accept(MediaType.APPLICATION_JSON)
+                 .retrieve() // 데이터를 받는 방식 exchange()는 Memory leak으로 인해 사용을 권고하지 않음.
+                 .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                         clientResponse -> clientResponse.bodyToMono(String.class)
+                                                         .map(body -> new RuntimeException(body)))
+                 .bodyToMono(String.class);
     }
 
     // -------------------------------------------- WebClient 활용
@@ -82,7 +81,8 @@ public class SampleController {
             System.out.println(test.getName() + ":oneSubscribe");
         });
 
-        // * 1:1 .map, 1:n .flatMap (not concurrency) .concatMap or .flatMapSequential (concurrency)
+        // * 1:1 .map, 1:n .flatMap (not concurrency) .concatMap or .flatMapSequential
+        // (concurrency)
         // 하향식으로 데이터를 받아가며 수행
         GET_greeting(1).flatMap(msg -> GET_greeting(2))
                        .flatMap(msg -> GET_greeting(3))
@@ -91,11 +91,9 @@ public class SampleController {
                        .subscribe();
 
         // then,, thenMany 완료후 다른 mono/flux를 연결해준다.
-        GET_greeting(1).then(GET_greeting(2)).subscribe(a-> System.out.println(a.getName()));
+        GET_greeting(1).then(GET_greeting(2)).subscribe(a -> System.out.println(a.getName()));
 
-        Flux.just("1,2,3")
-            .thenMany(Flux.just("4,5")) 
-            .subscribe(a->System.out.println(a));
+        Flux.just("1,2,3").thenMany(Flux.just("4,5")).subscribe(a -> System.out.println(a));
 
         zipWhentTest();
     }
@@ -169,11 +167,8 @@ public class SampleController {
     public Mono<String> uploadFile(@RequestPart("files") Flux<FilePart> filePartFlux) {
 
         // resume -> 대체후 구독, return -> 끊음
-        return filePartFlux.flatMap(it -> it.transferTo(Paths.get("D:/tempDir/" + it.filename()))).onErrorResume(e -> {
-            System.out.println(e.getMessage());
-            return Mono.error(e);
-        })
-                           // .onErrorResume(e -> Mono.error(new RuntimeException("Exception..")))
+        return filePartFlux.flatMap(it -> it.transferTo(Paths.get("D:/tempDir/" + it.filename())))
+                           .onErrorResume(e -> Mono.error(new RuntimeException("Exception..")))
                            .then(Mono.just("OK"));
     }
 
@@ -195,9 +190,9 @@ public class SampleController {
         }
 
     }
-    
-    public void castExample(){
-        // Type cast 오류시 오류로 
+
+    public void castExample() {
+        // Type cast 오류시 오류로
         Mono.just(1)
             .cast(String.class)
             .subscribe(System.out::println, (e) -> System.out.println("error"), () -> System.out.println("complete"));
@@ -207,29 +202,20 @@ public class SampleController {
             .ofType(String.class)
             .subscribe(System.out::println, (e) -> System.out.println("error"), () -> System.out.println("complete"));
     }
-    
-    public void doListener(){
+
+    public void doListener() {
         Mono.just("doOnSeries")
-            .doOnSubscribe {
-                println("doOnSubscribe")
-            }.doOnRequest {
-                println("doOnRequest")
-            }.doOnNext {
-                println("doOnNext")
-            }.doOnEach {
-                println("doOnEach")
-            }.doOnCancel {
-                println("doOnCancel")
-            }.doAfterTerminate {
-                println("doAfterTerminate")
-            }.doOnTerminate {
-                println("doOnTerminate")
-            }.doOnSuccess {
-                println("doOnSuccess")
-            }.doOnError {
-                println("doOnError")
-            }.doFinally {
-                println("doFinally") 
-            }.subscribe();
+            .doOnSubscribe((consumer) -> System.out.println("doOnSubscribe"))
+            .doOnRequest((consumer) -> System.out.println("doOnRequest"))
+            .doOnNext((consumer) -> System.out.println("doOnNext"))
+            .doOnEach((consumer) -> System.out.println("doOnEach"))
+            .doOnCancel(() -> System.out.println("doOnCancel"))
+            .doAfterTerminate(() -> System.out.println("doAfterTerminate"))
+            .doOnTerminate(() -> System.out.println("doOnTerminate"))
+            .doOnSuccess((consumer) -> System.out.println("doOnSuccess"))
+            .doOnError((consumer) -> System.out.println("doOnError"))
+            .doFinally((consumer) -> System.out.println("doFinally"))
+            .doOnSubscribe((consumer) -> System.out.println("doOnSubscribe"))
+            .subscribe();
     }
 }
