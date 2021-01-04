@@ -178,4 +178,16 @@ public class SampleController {
         }
 
     }
+    
+    public void castExample(){
+        // Type cast 오류시 오류로 
+        Mono.just(1)
+            .cast(String.class)
+            .subscribe(System.out::println, (e) -> System.out.println("error"), () -> System.out.println("complete"));
+
+        // Type cast 오류가 나지 않고 무시됨
+        Mono.just(1)
+            .ofType(String.class)
+            .subscribe(System.out::println, (e) -> System.out.println("error"), () -> System.out.println("complete"));
+    }
 }
