@@ -2,6 +2,7 @@ package com.webflux.controller;
 
 import static org.springframework.web.reactive.function.BodyInserters.fromFormData; //★
 
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -9,9 +10,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.ReactiveRedisOperations;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -20,6 +25,7 @@ import com.webflux.model.Test;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.function.Tuple2;
 
 @RestController
 public class SampleController {
@@ -37,8 +43,8 @@ public class SampleController {
     // https://luvstudy.tistory.com/100
 
     @GetMapping("/test")
-    public Mono<Test> test(String msg) {
-        return waterfallRequest();
+    public void test(String msg) {
+        waterfallRequest();
     }
 
     // Post Call Example
@@ -53,35 +59,38 @@ public class SampleController {
 
     // -------------------------------------------- WebClient 활용
 
-    // Chain Waterfall Example
-    private Mono<Test> waterfallRequest() {
-        // 하나의 waterfall 예시
-        Mono<Test> request1 = GET_greeting(1);
-        Mono<Test> value = request1.flatMap(msg -> {
-            return GET_greeting(2);
+    // 하향식 수행
+    private void waterfallRequest() {
+        GET_greeting(1).subscribe(test -> {
+            System.out.println(test.getName() + ":oneSubscribe");
         });
-        // * 1:1 .map, 1:n .flatMap (not concurrency) .concatMap or .flatMapSequential
-        // (concurrency)
 
-        // 다수의 waterfall 예시
-        GET_greeting(1).flatMap(msg -> {
-            System.out.println(msg.getName());
-            return GET_greeting(2);
-        }).flatMap(msg -> {
-            System.out.println(msg.getName());
-            return GET_greeting(3);
-        }).flatMap(msg -> {
-            System.out.println(msg.getName());
-            return GET_greeting(4);
-        }).flatMap(msg -> {
-            System.out.println(msg.getName());
-            return GET_greeting(5);
-        }).subscribe();
+        // * 1:1 .map, 1:n .flatMap (not concurrency) .concatMap or .flatMapSequential (concurrency)
+        // 하향식으로 데이터를 받아가며 수행
+        GET_greeting(1).flatMap(msg -> GET_greeting(2))
+                       .flatMap(msg -> GET_greeting(3))
+                       .flatMap(msg -> GET_greeting(4))
+                       .flatMap(msg -> GET_greeting(5))
+                       .subscribe();
 
-        return value;
+        // then,, thenMany 완료후 다른 mono/flux를 연결해준다.
+        GET_greeting(1).then(GET_greeting(2)).subscribe(a-> System.out.println(a.getName()));
+
+        Flux.just("1,2,3")
+            .thenMany(Flux.just("4,5")) 
+            .subscribe(a->System.out.println(a));
+
+        zipWhentTest();
     }
 
-    // Other Type Or Service Multiple
+    private Mono<Void> zipWhentTest() {
+        Mono.just("hello")
+            .zipWhen(it -> Mono.just(it + " world"))
+            .subscribe((Tuple2<String, String> it) -> System.out.println(it.getT1() + ", " + it.getT2()));
+        return Mono.empty();
+    }
+
+    // 서비스 병렬 수행
     private Mono<Object> multipleCallTest1() {
         Mono<Test> test1 = GET_greeting(1).subscribeOn(Schedulers.elastic());
         Mono<Test> test2 = GET_greeting(2).subscribeOn(Schedulers.elastic());
@@ -89,22 +98,22 @@ public class SampleController {
         return Mono.zip(test1, test2, (t1, t2) -> t1);
     }
 
-    // Other Service Multiple
+    // 서비스 병렬 수행
     private Flux<Test> multipleCallTest2() {
         return Flux.merge(GET_greeting(1), GET_greeting(2))
                    .parallel()
                    .runOn(Schedulers.elastic())
-                   .ordered((u1, u2) -> u2.getAge() - u1.getAge());
+                   .ordered((u1, u2) -> u2.getAge() - u1.getAge()); // 각 Publisher가 병렬 수행되서 순서가 없어서 정렬 후 Flux로 변환됨
     }
 
-    // Same Service Multiple
+    // 서비스 반복 수행
     private Flux<Test> multipleCallTest3() {
         List<Integer> list = Arrays.asList(1, 2, 3, 4, 5);
         return Flux.fromIterable(list)
                    .parallel()
                    .runOn(Schedulers.elastic())
                    .flatMap(this::GET_greeting)
-                   .ordered((u1, u2) -> u2.getAge() - u1.getAge()); // 각 Publisher가 병렬 수행되서 Ordered 해줘야 Flux로 변환됨
+                   .ordered((u1, u2) -> u2.getAge() - u1.getAge()); // 각 Publisher가 병렬 수행되서 순서가 없어서 정렬 후 Flux로 변환됨
     }
 
     // -------------------------------------------- 공통 Response객체 사용 시
@@ -135,5 +144,38 @@ public class SampleController {
     @PutMapping("/redis/test/{id}")
     public Mono<Boolean> insertSamples(@PathVariable String id) {
         return sampleOps.opsForValue().set(id, new Test("babo", 35));
+    }
+
+    // -------------------------------------------------- File 관련
+
+    @PostMapping("/file")
+    public Mono<String> uploadFile(@RequestPart("files") Flux<FilePart> filePartFlux) {
+
+        // resume -> 대체후 구독, return -> 끊음
+        return filePartFlux.flatMap(it -> it.transferTo(Paths.get("D:/tempDir/" + it.filename()))).onErrorResume(e -> {
+            System.out.println(e.getMessage());
+            return Mono.error(e);
+        })
+                           // .onErrorResume(e -> Mono.error(new RuntimeException("Exception..")))
+                           .then(Mono.just("OK"));
+    }
+
+    @PostMapping("/file-model")
+    public Mono<String> processModel(@ModelAttribute Model model) {
+        model.getFiles().forEach(it -> it.transferTo(Paths.get("D:/tempDir/" + it.filename())));
+        return Mono.just("OK");
+    }
+
+    public class Model {
+        private List<FilePart> files;
+
+        public List<FilePart> getFiles() {
+            return files;
+        }
+
+        public void setFiles(List<FilePart> files) {
+            this.files = files;
+        }
+
     }
 }
