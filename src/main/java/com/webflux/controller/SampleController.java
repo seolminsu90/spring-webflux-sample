@@ -56,6 +56,23 @@ public class SampleController {
     private Mono<Test> GET_greeting(int apiNo) {
         return webClient.get().uri("/test" + apiNo + "/{msg}", "   hihi").retrieve().bodyToMono(Test.class);
     }
+    
+    // webClient Exception Handling
+    private void webClientExceptionExample(){
+        webClient.mutate()                  // Builder 재활용해서 설정만 다르게 해서 쓰는방식
+             .baseUrl("https://some.com")
+             .build()
+             .get()
+             .uri("/resource")
+             .accept(MediaType.APPLICATION_JSON)
+             .retrieve() // 데이터를 받는 방식 exchange()는 Memory leak으로 인해 사용을 권고하지 않음.
+             .onStatus(status -> status.is4xxClientError() 
+                              || status.is5xxServerError()
+                 , clientResponse ->
+                               clientResponse.bodyToMono(String.class)
+                               .map(body -> new RuntimeException(body)))
+             .bodyToMono(String.class); 
+    }
 
     // -------------------------------------------- WebClient 활용
 
