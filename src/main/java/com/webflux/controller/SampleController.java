@@ -190,4 +190,29 @@ public class SampleController {
             .ofType(String.class)
             .subscribe(System.out::println, (e) -> System.out.println("error"), () -> System.out.println("complete"));
     }
+    
+    public void doListener(){
+        Mono.just("doOnSeries")
+            .doOnSubscribe {
+                println("doOnSubscribe")
+            }.doOnRequest {
+                println("doOnRequest")
+            }.doOnNext {
+                println("doOnNext")
+            }.doOnEach {
+                println("doOnEach")
+            }.doOnCancel {
+                println("doOnCancel")
+            }.doAfterTerminate {
+                println("doAfterTerminate")
+            }.doOnTerminate {
+                println("doOnTerminate")
+            }.doOnSuccess {
+                println("doOnSuccess")
+            }.doOnError {
+                println("doOnError")
+            }.doFinally {
+                println("doFinally") 
+            }.subscribe();
+    }
 }
