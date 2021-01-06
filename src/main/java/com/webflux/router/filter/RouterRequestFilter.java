@@ -18,8 +18,8 @@ public class RouterRequestFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange serverWebExchange, WebFilterChain webFilterChain) {
         ServerHttpRequest request = serverWebExchange.getRequest();
-        logger.info("Path [{}]Params [{}]", request.getPath(), request.getQueryParams());
-        logger.info("Params [{}]", request.getPath(), request.getQueryParams());
+        logger.info("Path [{}]", request.getPath());
+        logger.info("Params [{}]", request.getQueryParams());
         // serverWebExchange.getResponse().getHeaders().add("web-filter",
         // "web-filter-test");
         return webFilterChain.filter(serverWebExchange);
