@@ -1,4 +1,4 @@
-package com.webflux.config;
+package com.webflux.common.config;
 
 import java.time.Duration;
 
@@ -12,10 +12,12 @@ import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializationContext.RedisSerializationContextBuilder;
+
+import com.webflux.common.model.Test;
+
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import com.webflux.model.Test;
-
+// 원격 reactive API service 엑세스 한다 생각하는 예시
 @Configuration
 public class RedisConfigurer {
 

@@ -1,11 +1,12 @@
-package com.webflux.controller;
+package com.webflux.common.controller;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.webflux.model.Test;
+import com.webflux.common.model.Test;
 
+//원격 reactive API service 엑세스 한다 생각하는 예시
 @RestController
 public class RemoteController {
     @GetMapping("/remote/test1/{msg}")

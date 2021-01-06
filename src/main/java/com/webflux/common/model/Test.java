@@ -1,4 +1,4 @@
-package com.webflux.model;
+package com.webflux.common.model;
 
 public class Test {
     private String name;
