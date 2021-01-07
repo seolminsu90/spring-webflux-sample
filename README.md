@@ -10,4 +10,24 @@ webflux sample
 
 ----------------
 
-무긍 무진하니.... 쓰면서 추후 살을 붙이자
+쓸만해 보이는거 저장
+
+### subscribeOn, publishOn
+flatMap.. 등 사용 시 리턴하는 publisher를 subscribeOn으로 스레드풀로 스레드가 flatmap내부 처리를 병합처리해서 구독처리(subscribe) 할 수 있다 뭐가좋은지는 아직..
+```bash
+Flux.just("red", "white", "blue")
+  .log()
+  .flatMap(value ->
+     Mono.just(value.toUpperCase())
+       .subscribeOn(Schedulers.parallel()),3)
+.subscribe(value -> {
+    log.error("Consumed: " + value);
+});
+```
+### log
+reactor 동작이 로깅된다. (onSubscribe.. onNext.. complete) 의 과정
+```bash
+Flux.just(1, 2, 4, 5, 6)
+     .log(null, Level.FINE) // java.util.logging.Level 타입
+     .subscribe(x -> logger.info("next: {}", x));
+```
