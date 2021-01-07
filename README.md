@@ -10,7 +10,7 @@ webflux sample
 
 ----------------
 
-쓸만해 보이는거 저장
+## Reactor 쓸만해 보이는거 저장
 
 ### subscribeOn, publishOn
 flatMap.. 등 사용 시 리턴하는 publisher를 subscribeOn으로 스레드풀로 스레드가 flatmap내부 처리를 병합처리해서 구독처리(subscribe) 할 수 있다 뭐가좋은지는 아직..
