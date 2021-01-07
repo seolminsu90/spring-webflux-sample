@@ -17,12 +17,12 @@ flatMap.. 등 사용 시 리턴하는 publisher를 subscribeOn으로 스레드�
 ```bash
 Flux.just("red", "white", "blue")
   .log()
-  .flatMap(value ->
-     Mono.just(value.toUpperCase())
-       .subscribeOn(Schedulers.parallel()),3)
-.subscribe(value -> {
-    log.error("Consumed: " + value);
-});
+  .flatMap(value -> 
+      Mono.just(value.toUpperCase())
+        .subscribeOn(Schedulers.parallel()),3)
+  .subscribe(value -> {
+      log.error("Consumed: " + value);
+   });
 ```
 ### log
 reactor 동작이 로깅된다. (onSubscribe.. onNext.. complete) 의 과정
