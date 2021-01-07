@@ -36,9 +36,13 @@ public class RouteFunctionExample {
      */
     @Bean
     public RouterFunction<ServerResponse> getEmployeeByIdRoute() {
+        // 조건을 생성해서 사용 and... or...
         RequestPredicate predicate = RequestPredicates.POST(
                 "/test2").and(RequestPredicates.accept(MediaType.APPLICATION_OCTET_STREAM));
 
+        // 빌더 사용 예제
+        // RouterFunctions.route().POST("/test2", RequestPredicates.accept(MediaType.APPLICATION_OCTET_STREAM), (req)->{return null;});
+        
         RouterFunction<ServerResponse> response = RouterFunctions.route(predicate, (request) -> {
             Flux<DataBuffer> dataBuffer = request.body(BodyExtractors.toDataBuffers());
             Mono<String> mapper = uploadFilePart(dataBuffer).then(Mono.just("OK"));
