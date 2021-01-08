@@ -20,6 +20,7 @@ Flux.just("red", "white", "blue")
   .flatMap(value -> 
       Mono.just(value.toUpperCase())
         .subscribeOn(Schedulers.parallel()),3)
+        //일부 예시 소스에 Schedulers.elastic()을 사용하는데 무제한 쓰레드풀인지 reactor에서는 deprecated 되었고 boundedElastic()을 사용하라는 권고가 있으니 참조
   .subscribe(value -> {
       log.error("Consumed: " + value);
    });
