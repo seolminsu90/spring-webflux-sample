@@ -26,6 +26,35 @@ Flux.just("red", "white", "blue")
       log.error("Consumed: " + value);
    });
 ```
+publishOn
+publishOn() 메서드를 이용하면 next, complete, error신호를 별도 쓰레드로 처리할 수 있다. map(), flatMap() 등의 변환도 publishOn()이 지정한 쓰레드를 이용해서 처리한다
+```bash
+Flux.range(1, 6)
+        .publishOn(Schedulers.newElastic("PUB1"), 2)
+        .map(i -> {
+            logger.info("map 1: {} + 10", i);
+            return i + 10;
+        })
+        .publishOn(Schedulers.newElastic("PUB2"))
+        .map(i -> {
+            logger.info("map 2: {} + 10", i);
+            return i + 10;
+        })
+        .subscribe();
+```
+subscribeOn
+subscribeOn()을 사용하면 Subscriber가 시퀀스에 대한 request 신호를 별도 스케줄러로 처리한다. 즉 시퀀스(Flux나 Mono)를 실행할 스케줄러를 지정한다
+```bash
+Flux.range(1, 6)
+        .log() 
+        .subscribeOn(Schedulers.newElastic("SUB"))
+        .map(i -> {
+            logger.info("map: {} + 10", i);
+            return i + 10;
+        })
+        .subscribe();
+
+```
 ### log
 reactor 동작이 로깅된다. (onSubscribe.. onNext.. complete) 의 과정
 ```bash
