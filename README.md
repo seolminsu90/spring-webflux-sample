@@ -33,3 +33,30 @@ Flux.just(1, 2, 4, 5, 6)
      .log(null, Level.FINE) // java.util.logging.Level 타입
      .subscribe(x -> logger.info("next: {}", x));
 ```
+
+### cold hot
+대표적인 cold : Mono.create
+대표적인 hot : Mono.just
+hot : 구독하지 않아도 실행됨, 데이터 재사용 가능
+cold : 구독해야 실행됨, 매번 새로운 데이터
+```bash
+public String test(){
+  syso("hi");
+  return "Hello"
+}
+
+Mono<String> hot = Mono.just(test());
+hot.subscribe();
+hot.subscribe();
+hot.subscribe();
+
+// hi
+// hello
+// hello
+// hello
+```
+대부분 cold 이다, cold -> hot 전환
+```bash
+ConnectableFlux<Integer> hot = coldSource.publish();
+```
+여러번 가져다 쓸일 있을때 쓰면 좋을 듯?
