@@ -8,7 +8,8 @@ webflux sample
 - Annotation 방식 및 RouterFunction 방식 두개 다 예시 있음.
 - 기존 @Controller.. @PostMapping... 방식이 편하긴 한 듯
 - MVC프로젝트에서 WebClient 사용 시 CountDownLatch 활용해야 한다.
-  → 사용 쓰레드 수 정의하고 await하여 쓰레드 작업이 완료되는걸 기다리게 함.
+  → 초기 수 정의하고 await하여 쓰레드 작업이 완료되는걸 기다리게 함.
+  → 작업수 만큼 설정 후 doOnTerminate 에 countDown호출 처리
   → 자세한건 찾아보기
 ----------------
 
